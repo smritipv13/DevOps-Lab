@@ -1,11 +1,13 @@
+p
 pipeline {
     agent any
 
     stages {
         stage('Build') {
             steps {
-                echo 'Installing dependencies...'
-                sh 'python3 -m pip install --user flask==2.1.2'
+                echo 'Checking Python and Flask dependencies...'
+                sh 'python3 --version'
+                sh 'python3 -c "import flask; print(flask.__version__)"'
             }
         }
 
@@ -22,6 +24,7 @@ pipeline {
                 sh '''
                     mkdir -p "${WORKSPACE}/python-app-deploy"
                     cp app.py "${WORKSPACE}/python-app-deploy/"
+                    cp test_app.py "${WORKSPACE}/python-app-deploy/"
                 '''
             }
         }
@@ -30,16 +33,16 @@ pipeline {
             steps {
                 echo 'Starting Flask application...'
                 sh '''
-                    nohup python3 "${WORKSPACE}/python-app-deploy/app.py" \
-                        > "${WORKSPACE}/python-app-deploy/app.log" 2>&1 &
-                    echo $! > "${WORKSPACE}/python-app-deploy/app.pid"
+                    cd "${WORKSPACE}/python-app-deploy"
+                    nohup python3 app.py > app.log 2>&1 &
+                    echo $! > app.pid
                 '''
             }
         }
 
         stage('Test Application') {
             steps {
-                echo 'Testing deployed application...'
+                echo 'Testing the application...'
                 sh 'python3 test_app.py'
             }
         }
